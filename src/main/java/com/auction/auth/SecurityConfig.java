@@ -1,4 +1,3 @@
-<!-- SecurityConfig.java -->
 package com.example.auth.config;
 
 import org.springframework.context.annotation.Bean;
@@ -11,14 +10,23 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import com.example.auth.service.UserService;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
+    private static final Logger logger = LogManager.getLogger(SecurityConfig.class);
+
+    @Autowired
+    private UserService userService;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        System.out.println("Configuring Security Filter Chain");
+        logger.info("Configuring Security Filter Chain");
         // Configure the HTTP security settings
         http
             .csrf().disable() // Disable CSRF protection for stateless REST APIs
@@ -33,8 +41,18 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        System.out.println("Initializing Password Encoder");
+        logger.info("Initializing Password Encoder");
         // Use BCrypt for password encoding
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManagerBean(HttpSecurity http) throws Exception {
+        return http.getSharedObject(AuthenticationManagerBuilder.class).build();
+    }
+
+    @Autowired
+    public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
+        auth.userDetailsService(userService).passwordEncoder(passwordEncoder());
     }
 }
